@@ -123,7 +123,7 @@ export default defineConfig({
 	},
 	base: process.env.NODE_ENV === 'production' ? '' : '/admin/',
 	server: {
-		port: 8080,
+		port: 8082,
 		proxy: {
 			'^/(?!admin)': {
 				target: process.env.API_URL ? process.env.API_URL : 'http://localhost:8055/',
