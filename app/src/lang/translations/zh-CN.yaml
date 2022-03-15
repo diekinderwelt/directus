@@ -114,7 +114,6 @@ recommended_defaults: 推荐设置
 unarchive: 取消存档
 unarchive_confirm: 您确定要取消归档此条目吗？
 nested_files_folders_will_be_moved: 文件和文件夹将被上移一级。
-unknown_validation_errors: '以下隐藏字段的验证错误：'
 validationError:
   eq: 值必须是 {valid}
   neq: 值不能为 {invalid}
@@ -472,7 +471,7 @@ copy_to: 复制到...
 no_other_dashboards_copy: 您还没有任何其他工作台。
 inactive: 非活跃
 users: 用户
-activity: 活动
+activity: 操作记录
 activity_item: 活动项
 action: 操作
 ip_address: IP 地址
@@ -1653,7 +1652,6 @@ layouts:
     subtitle: 副标题
   tabular:
     tabular: 表
-    fields: 字段
     spacing: 间距
     comfortable: 宽松
     compact: 紧凑
