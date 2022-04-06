@@ -365,6 +365,16 @@ today: Dziś
 yesterday: Wczoraj
 delete_comment: Usuń komentarz
 delete_share: Usuń udostępnienie
+functions:
+  year: Rok
+  month: Miesiąc
+  week: Tydzień
+  day: Dzień
+  weekday: Dzień roboczy
+  hour: Godzina
+  minute: Minuta
+  second: Drugi
+  count: Licz
 date-fns_date: PPP
 date-fns_time: 'h:mm:ss a'
 date-fns_time_no_seconds: 'h:mm a'
@@ -1031,6 +1041,7 @@ fields:
     project_url: Adres URL projektu
     project_color: Kolor projektu
     project_logo: Logo projektu
+    default_language: Domyślny język
     branding: Marka i Styl
     public_foreground: Publiczny Foreground
     public_background: Tło publiczne
@@ -1310,7 +1321,6 @@ translation: Tłumaczenia
 translation_placeholder: Wprowadź tłumaczenie...
 value: Wartość
 view_project: Zobacz projekt
-weeks: { }
 report_error: Zgłoś błąd
 start: Rozpocznij
 interfaces:
