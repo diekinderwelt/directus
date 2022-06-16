@@ -88,7 +88,7 @@ startup. The JavaScript configuration supports two different formats, either an 
 the environment variable name:
 
 ```js
-// Object Sytax
+// Object Syntax
 
 module.exports = {
 	HOST: '0.0.0.0',
@@ -197,6 +197,7 @@ prefixing the value with `{type}:`. The following types are available:
 | `ROOT_REDIRECT`            | Where to redirect to when navigating to `/`. Accepts a relative path, absolute URL, or `false` to disable. | `./admin`     |
 | `SERVE_APP`                | Whether or not to serve the Admin App under `/admin`.                                                      | `true`        |
 | `GRAPHQL_INTROSPECTION`    | Whether or not to enable GraphQL Introspection                                                             | `true`        |
+| `MAX_RELATIONAL_DEPTH`     | The maximum depth when filtering / querying relational fields, with a minimum value of `2`.                | `10`          |
 
 <sup>[1]</sup> The PUBLIC_URL value is used for things like OAuth redirects, forgot-password emails, and logos that
 needs to be publicly available on the internet.
@@ -209,7 +210,7 @@ variables are passed to the `options` configuration of a
 [`Pino-http` instance](https://github.com/pinojs/pino-http#api). Based on your project's needs, you can extend the
 `LOGGER_*` environment variables with any config you need to pass to the logger instance. If a LOGGER_LEVELS key is
 added, these values will be passed to the logger formatter, as described
-[here](https://github.com/pinojs/pino/blob/master/docs/help.md#mapping-pino-log-levels-to-google-cloud-logging-stackdriver-serverity-levels)
+[here](https://github.com/pinojs/pino/blob/master/docs/help.md#mapping-pino-log-levels-to-google-cloud-logging-stackdriver-severity-levels)
 for example. The format for adding LEVELS values is:
 `LOGGER_LEVELS="trace:DEBUG,debug:DEBUG,info:INFO,warn:WARNING,error:ERROR,fatal:CRITICAL"`
 
@@ -409,26 +410,36 @@ subsequent requests are served straight from this cache. Enabling cache will als
 cache-control headers. Depending on your setup, this will further improve performance by caching the request in
 middleman servers (like CDNs) and even the browser.
 
+:::tip Internal Caching
+
+In addition to data-caching, Directus also does some internal caching. Note `SCHEMA_CACHE` and `CACHE_PERMISSIONS` which
+are enabled by default. These speed up the overall performance of Directus, as we don't want to introspect the whole
+database or check all permissions on every request. When running Directus load balanced, you'll need to use a shared
+cache storage (like [Redis](#redis-2) or [Memcache](#memcache-2)) or else disable all caching.
+
+:::
+
 ::: tip Assets Cache
 
 `Cache-Control` and `Last-Modified` headers for the `/assets` endpoint are separate from the regular data-cache.
 `Last-Modified` comes from `modified_on` DB field. This is useful as it's often possible to cache assets for far longer
-than you would cache database content. [Learn More](#assets)
+than you would cache database content. To learn more, see [Assets](#assets).
 
 :::
 
-| Variable                          | Description                                                                              | Default Value    |
-| --------------------------------- | ---------------------------------------------------------------------------------------- | ---------------- |
-| `CACHE_ENABLED`                   | Whether or not caching is enabled.                                                       | `false`          |
-| `CACHE_TTL`<sup>[1]</sup>         | How long the cache is persisted.                                                         | `5m`             |
-| `CACHE_CONTROL_S_MAXAGE`          | Whether to not to add the `s-maxage` expiration flag. Set to a number for a custom value | `0`              |
-| `CACHE_AUTO_PURGE`<sup>[2]</sup>  | Automatically purge the cache on `create`, `update`, and `delete` actions.               | `false`          |
-| `CACHE_SYSTEM_TTL`<sup>[3]</sup>  | How long the schema caches (schema/permissions) are persisted.                           | `10m`            |
-| `CACHE_SCHEMA`<sup>[3]</sup>      | Whether or not the database schema is cached. One of `false`, `true`                     | `true`           |
-| `CACHE_PERMISSIONS`<sup>[3]</sup> | Whether or not the user permissions are cached. One of `false`, `true`                   | `true`           |
-| `CACHE_NAMESPACE`                 | How to scope the cache data.                                                             | `directus-cache` |
-| `CACHE_STORE`<sup>[4]</sup>       | Where to store the cache data. Either `memory`, `redis`, or `memcache`.                  | `memory`         |
-| `CACHE_STATUS_HEADER`             | If set, returns the cache status in the configured header. One of `HIT`, `MISS`.         | --               |
+| Variable                          | Description                                                                                                             | Default Value    |
+| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------- | ---------------- |
+| `CACHE_ENABLED`                   | Whether or not data caching is enabled.                                                                                 | `false`          |
+| `CACHE_TTL`<sup>[1]</sup>         | How long the data cache is persisted.                                                                                   | `5m`             |
+| `CACHE_CONTROL_S_MAXAGE`          | Whether to not to add the `s-maxage` expiration flag. Set to a number for a custom value.                               | `0`              |
+| `CACHE_AUTO_PURGE`<sup>[2]</sup>  | Automatically purge the data cache on `create`, `update`, and `delete` actions.                                         | `false`          |
+| `CACHE_SYSTEM_TTL`<sup>[3]</sup>  | How long `CACHE_SCHEMA` and `CACHE_PERMISSIONS` are persisted.                                                          | `10m`            |
+| `CACHE_SCHEMA`<sup>[3]</sup>      | Whether or not the database schema is cached. One of `false`, `true`                                                    | `true`           |
+| `CACHE_PERMISSIONS`<sup>[3]</sup> | Whether or not the user permissions are cached. One of `false`, `true`                                                  | `true`           |
+| `CACHE_NAMESPACE`                 | How to scope the cache data.                                                                                            | `directus-cache` |
+| `CACHE_STORE`<sup>[4]</sup>       | Where to store the cache data. Either `memory`, `redis`, or `memcache`.                                                 | `memory`         |
+| `CACHE_STATUS_HEADER`             | If set, returns the cache status in the configured header. One of `HIT`, `MISS`.                                        | --               |
+| `CACHE_VALUE_MAX_SIZE`            | Maximum size of values that will be cached. Accepts number of bytes, or human readable string. Use `false` for no limit | false            |
 
 <sup>[1]</sup> `CACHE_TTL` Based on your project's needs, you might be able to aggressively cache your data, only
 requiring new data to be fetched every hour or so. This allows you to squeeze the most performance out of your Directus
@@ -608,7 +619,7 @@ For each auth provider you list, you must also provide the following configurati
 
 You may also be required to specify additional variables depending on the auth driver. See configuration details below.
 
-::: warning Multiple Providers
+::: tip Multiple Providers
 
 Directus users can only authenticate using the auth provider they are created with. It is not possible to authenticate
 with multiple providers for the same user.
@@ -652,12 +663,12 @@ These flows rely on the `PUBLIC_URL` variable for redirecting. Ensure the variab
 
 | Variable                                    | Description                                                                                    | Default Value    |
 | ------------------------------------------- | ---------------------------------------------------------------------------------------------- | ---------------- |
-| `AUTH_<PROVIDER>_CLIENT_ID`                 | Client identifier for the OAuth provider.                                                    | --               |
-| `AUTH_<PROVIDER>_CLIENT_SECRET`             | Client secret for the OAuth provider.                                                        | --               |
+| `AUTH_<PROVIDER>_CLIENT_ID`                 | Client identifier for the OAuth provider.                                                      | --               |
+| `AUTH_<PROVIDER>_CLIENT_SECRET`             | Client secret for the OAuth provider.                                                          | --               |
 | `AUTH_<PROVIDER>_SCOPE`                     | A white-space separated list of permissions to request.                                        | `email`          |
-| `AUTH_<PROVIDER>_AUTHORIZE_URL`             | Authorization page URL of the OAuth provider.                                                | --               |
-| `AUTH_<PROVIDER>_ACCESS_URL`                | Access token URL of the OAuth provider.                                                      | --               |
-| `AUTH_<PROVIDER>_PROFILE_URL`               | User profile URL of the OAuth provider.                                                      | --               |
+| `AUTH_<PROVIDER>_AUTHORIZE_URL`             | Authorization page URL of the OAuth provider.                                                  | --               |
+| `AUTH_<PROVIDER>_ACCESS_URL`                | Access token URL of the OAuth provider.                                                        | --               |
+| `AUTH_<PROVIDER>_PROFILE_URL`               | User profile URL of the OAuth provider.                                                        | --               |
 | `AUTH_<PROVIDER>_IDENTIFIER_KEY`            | User profile identifier key <sup>[1]</sup>. Will default to `EMAIL_KEY`.                       | --               |
 | `AUTH_<PROVIDER>_EMAIL_KEY`                 | User profile email key.                                                                        | `email`          |
 | `AUTH_<PROVIDER>_FIRST_NAME_KEY`            | User profile first name key.                                                                   | --               |
@@ -667,7 +678,8 @@ These flows rely on the `PUBLIC_URL` variable for redirecting. Ensure the variab
 | `AUTH_<PROVIDER>_ICON`                      | SVG icon to display with the login link. [See options here](/getting-started/glossary/#icons). | `account_circle` |
 | `AUTH_<PROVIDER>_PARAMS`                    | Custom query parameters applied to the authorization URL.                                      | --               |
 
-<sup>[1]</sup> When authenticating, Directus will match the identifier value from the external user profile to a Directus users "External Identifier".
+<sup>[1]</sup> When authenticating, Directus will match the identifier value from the external user profile to a
+Directus users "External Identifier".
 
 ### OpenID
 
@@ -686,31 +698,32 @@ OpenID is an authentication protocol built on OAuth 2.0, and should be preferred
 | `AUTH_<PROVIDER>_ICON`                      | SVG icon to display with the login link. [See options here](/getting-started/glossary/#icons). | `account_circle`       |
 | `AUTH_<PROVIDER>_PARAMS`                    | Custom query parameters applied to the authorization URL.                                      | --                     |
 
-<sup>[1]</sup> When authenticating, Directus will match the identifier value from the external user profile to a Directus users "External Identifier".
+<sup>[1]</sup> When authenticating, Directus will match the identifier value from the external user profile to a
+Directus users "External Identifier".
 
-<sup>[2]</sup> `sub` represents a unique user identifier defined by the OpenID provider. For users not relying on `PUBLIC_REGISTRATION` it is recommended
-to use a human-readable identifier, such as `email`.
+<sup>[2]</sup> `sub` represents a unique user identifier defined by the OpenID provider. For users not relying on
+`PUBLIC_REGISTRATION` it is recommended to use a human-readable identifier, such as `email`.
 
 ### LDAP (`ldap`)
 
 LDAP allows Active Directory users to authenticate and use Directus without having to be manually configured. User
 information and roles will be assigned from Active Directory.
 
-| Variable                                 | Description                                                                  | Default Value |
-| ---------------------------------------- | ---------------------------------------------------------------------------- | ------------- |
-| `AUTH_<PROVIDER>_CLIENT_URL`             | LDAP connection URL.                                                         | --            |
-| `AUTH_<PROVIDER>_BIND_DN`                | Bind user <sup>[1]</sup> distinguished name.                                 | --            |
-| `AUTH_<PROVIDER>_BIND_PASSWORD`          | Bind user password.                                                          | --            |
-| `AUTH_<PROVIDER>_USER_DN`                | Directory path containing users.                                             | --            |
-| `AUTH_<PROVIDER>_USER_ATTRIBUTE`         | Attribute to identify the user.                                              | `cn`          |
-| `AUTH_<PROVIDER>_USER_SCOPE`             | Scope of the user search, either `base`, `one`, `sub` <sup>[2]</sup>.        | `one`         |
-| `AUTH_<PROVIDER>_MAIL_ATTRIBUTE`         | User email attribute.                                                        | `mail`        |
-| `AUTH_<PROVIDER>_FIRST_NAME_ATTRIBUTE`   | User first name attribute.                                                   | `givenName`   |
-| `AUTH_<PROVIDER>_LAST_NAME_ATTRIBUTE`    | User last name attribute.                                                    | `sn`          |
-| `AUTH_<PROVIDER>_GROUP_DN`<sup>[3]</sup> | Directory path containing groups.                                            | --            |
-| `AUTH_<PROVIDER>_GROUP_ATTRIBUTE`        | Attribute to identify user as a member of a group.                           | `member`      |
-| `AUTH_<PROVIDER>_GROUP_SCOPE`            | Scope of the group search, either `base`, `one`, `sub` <sup>[2]</sup>.       | `one`         |
-| `AUTH_<PROVIDER>_DEFAULT_ROLE_ID`        | A Directus role ID to assign created users when `GROUP_DN` isn't configured. | --            |
+| Variable                                 | Description                                                            | Default Value |
+| ---------------------------------------- | ---------------------------------------------------------------------- | ------------- |
+| `AUTH_<PROVIDER>_CLIENT_URL`             | LDAP connection URL.                                                   | --            |
+| `AUTH_<PROVIDER>_BIND_DN`                | Bind user <sup>[1]</sup> distinguished name.                           | --            |
+| `AUTH_<PROVIDER>_BIND_PASSWORD`          | Bind user password.                                                    | --            |
+| `AUTH_<PROVIDER>_USER_DN`                | Directory path containing users.                                       | --            |
+| `AUTH_<PROVIDER>_USER_ATTRIBUTE`         | Attribute to identify the user.                                        | `cn`          |
+| `AUTH_<PROVIDER>_USER_SCOPE`             | Scope of the user search, either `base`, `one`, `sub` <sup>[2]</sup>.  | `one`         |
+| `AUTH_<PROVIDER>_MAIL_ATTRIBUTE`         | User email attribute.                                                  | `mail`        |
+| `AUTH_<PROVIDER>_FIRST_NAME_ATTRIBUTE`   | User first name attribute.                                             | `givenName`   |
+| `AUTH_<PROVIDER>_LAST_NAME_ATTRIBUTE`    | User last name attribute.                                              | `sn`          |
+| `AUTH_<PROVIDER>_GROUP_DN`<sup>[3]</sup> | Directory path containing groups.                                      | --            |
+| `AUTH_<PROVIDER>_GROUP_ATTRIBUTE`        | Attribute to identify user as a member of a group.                     | `member`      |
+| `AUTH_<PROVIDER>_GROUP_SCOPE`            | Scope of the group search, either `base`, `one`, `sub` <sup>[2]</sup>. | `one`         |
+| `AUTH_<PROVIDER>_DEFAULT_ROLE_ID`        | A fallback Directus role ID to assign created users.                   | --            |
 
 <sup>[1]</sup> The bind user must have permission to query users and groups to perform authentication. Anonymous binding
 can by achieved by setting an empty value for `BIND_DN` and `BIND_PASSWORD`.
@@ -721,7 +734,8 @@ can by achieved by setting an empty value for `BIND_DN` and `BIND_PASSWORD`.
 - `one`: Searches all objects within the associated DN.
 - `sub`: Searches all objects and sub-objects within the associated DN.
 
-<sup>[3]</sup> If a `GROUP_DN` is specified, the user's role will always be updated on authentication to what's configured in AD.
+<sup>[3]</sup> If `GROUP_DN` is specified, the user's role will always be updated on authentication to a matching group
+configured in AD, or fallback to the `DEFAULT_ROLE_ID`.
 
 ### Example: LDAP
 
@@ -767,12 +781,23 @@ AUTH_FACEBOOK_ICON="facebook"
 | `EXTENSIONS_PATH`        | Path to your local extensions folder.                   | `./extensions` |
 | `EXTENSIONS_AUTO_RELOAD` | Automatically reload extensions when they have changed. | `false`        |
 
+## Messenger
+
+| Variable              | Description                                       | Default Value |
+| --------------------- | ------------------------------------------------- | ------------- |
+| `MESSENGER_STORE`     | One of `memory`, `redis`<sup>[1]</sup>            | `memory`      |
+| `MESSENGER_NAMESPACE` | How to scope the channels in Redis                | `directus`    |
+| `MESSENGER_REDIS_*`   | The Redis configuration for the pubsub connection | --            |
+
+<sup>[1]</sup> `redis` should be used in load-balanced installations of Directus
+
 ## Email
 
-| Variable          | Description                                                              | Default Value          |
-| ----------------- | ------------------------------------------------------------------------ | ---------------------- |
-| `EMAIL_FROM`      | Email address from which emails are sent.                                | `no-reply@directus.io` |
-| `EMAIL_TRANSPORT` | What to use to send emails. One of `sendmail`, `smtp`, `mailgun`, `ses`. | `sendmail`             |
+| Variable             | Description                                                              | Default Value          |
+| -------------------- | ------------------------------------------------------------------------ | ---------------------- |
+| `EMAIL_VERIFY_SETUP` | Check if email setup is properly configured.                             | `true`                 |
+| `EMAIL_FROM`         | Email address from which emails are sent.                                | `no-reply@directus.io` |
+| `EMAIL_TRANSPORT`    | What to use to send emails. One of `sendmail`, `smtp`, `mailgun`, `ses`. | `sendmail`             |
 
 Based on the `EMAIL_TRANSPORT` used, you must also provide the following configurations:
 

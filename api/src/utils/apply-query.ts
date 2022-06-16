@@ -1,14 +1,14 @@
 import { Aggregate, FieldFunction, Filter, Query, Relation, SchemaOverview } from '@directus/shared/types';
-import { getOutputTypeForFunction } from '@directus/shared/utils';
 import { Knex } from 'knex';
 import { clone, isPlainObject, set } from 'lodash';
 import { customAlphabet } from 'nanoid';
 import validate from 'uuid-validate';
 import { getHelpers } from '../database/helpers';
-import { InvalidQueryException } from '../exceptions';
+import { InvalidQueryException } from '../exceptions/invalid-query';
 import { getColumn } from './get-column';
 import { getColumnPath } from './get-column-path';
 import { getRelationInfo } from './get-relation-info';
+import { getOutputTypeForFunction } from '@directus/shared/utils';
 
 const generateAlias = customAlphabet('abcdefghijklmnopqrstuvwxyz', 5);
 
@@ -354,8 +354,16 @@ export function applyFilter(
 			if (relationType === 'm2o' || relationType === 'a2o' || relationType === null) {
 				if (filterPath.length > 1) {
 					const columnName = getColumnPath({ path: filterPath, collection, relations, aliasMap });
+
 					if (!columnName) continue;
-					applyFilterToQuery(columnName, filterOperator, filterValue, logical);
+
+					if (relation?.related_collection) {
+						applyFilterToQuery(columnName, filterOperator, filterValue, logical, relation.related_collection); // m2o
+					} else if (filterPath[0].includes(':')) {
+						applyFilterToQuery(columnName, filterOperator, filterValue, logical, filterPath[0].split(':')[1]); // a2o
+					} else {
+						applyFilterToQuery(columnName, filterOperator, filterValue, logical);
+					}
 				} else {
 					applyFilterToQuery(`${collection}.${filterPath[0]}`, filterOperator, filterValue, logical);
 				}
@@ -392,8 +400,13 @@ export function applyFilter(
 				}
 			}
 		}
-
-		function applyFilterToQuery(key: string, operator: string, compareValue: any, logical: 'and' | 'or' = 'and') {
+		function applyFilterToQuery(
+			key: string,
+			operator: string,
+			compareValue: any,
+			logical: 'and' | 'or' = 'and',
+			originalCollectionName?: string
+		) {
 			const [table, column] = key.split('.');
 
 			// Is processed through Knex.Raw, so should be safe to string-inject into these where queries
@@ -435,9 +448,10 @@ export function applyFilter(
 
 			// Cast filter value (compareValue) based on type of field being filtered against
 			const [collection, field] = key.split('.');
+			const mappedCollection = originalCollectionName || collection;
 
-			if (collection in schema.collections && field in schema.collections[collection].fields) {
-				const type = schema.collections[collection].fields[field].type;
+			if (mappedCollection in schema.collections && field in schema.collections[mappedCollection].fields) {
+				const type = schema.collections[mappedCollection].fields[field].type;
 
 				if (['date', 'dateTime', 'time', 'timestamp'].includes(type)) {
 					if (Array.isArray(compareValue)) {
@@ -476,12 +490,28 @@ export function applyFilter(
 				dbQuery[logical].whereNot(selectionRaw, compareValue);
 			}
 
+			if (operator === '_ieq') {
+				dbQuery[logical].whereRaw(`LOWER(??) = ?`, [selectionRaw, `${compareValue.toLowerCase()}`]);
+			}
+
+			if (operator === '_nieq') {
+				dbQuery[logical].whereRaw(`LOWER(??) <> ?`, [selectionRaw, `${compareValue.toLowerCase()}`]);
+			}
+
 			if (operator === '_contains') {
 				dbQuery[logical].where(selectionRaw, 'like', `%${compareValue}%`);
 			}
 
 			if (operator === '_ncontains') {
 				dbQuery[logical].whereNot(selectionRaw, 'like', `%${compareValue}%`);
+			}
+
+			if (operator === '_icontains') {
+				dbQuery[logical].whereRaw(`LOWER(??) LIKE ?`, [selectionRaw, `%${compareValue.toLowerCase()}%`]);
+			}
+
+			if (operator === '_nicontains') {
+				dbQuery[logical].whereRaw(`LOWER(??) NOT LIKE ?`, [selectionRaw, `%${compareValue.toLowerCase()}%`]);
 			}
 
 			if (operator === '_starts_with') {
@@ -492,12 +522,28 @@ export function applyFilter(
 				dbQuery[logical].whereNot(key, 'like', `${compareValue}%`);
 			}
 
+			if (operator === '_istarts_with') {
+				dbQuery[logical].whereRaw(`LOWER(??) LIKE ?`, [selectionRaw, `${compareValue.toLowerCase()}%`]);
+			}
+
+			if (operator === '_nistarts_with') {
+				dbQuery[logical].whereRaw(`LOWER(??) NOT LIKE ?`, [selectionRaw, `${compareValue.toLowerCase()}%`]);
+			}
+
 			if (operator === '_ends_with') {
 				dbQuery[logical].where(key, 'like', `%${compareValue}`);
 			}
 
 			if (operator === '_nends_with') {
 				dbQuery[logical].whereNot(key, 'like', `%${compareValue}`);
+			}
+
+			if (operator === '_iends_with') {
+				dbQuery[logical].whereRaw(`LOWER(??) LIKE ?`, [selectionRaw, `%${compareValue.toLowerCase()}`]);
+			}
+
+			if (operator === '_niends_with') {
+				dbQuery[logical].whereRaw(`LOWER(??) NOT LIKE ?`, [selectionRaw, `%${compareValue.toLowerCase()}`]);
 			}
 
 			if (operator === '_gt') {
@@ -555,6 +601,7 @@ export function applyFilter(
 			if (operator == '_nintersects') {
 				dbQuery[logical].whereRaw(helpers.st.nintersects(key, compareValue));
 			}
+
 			if (operator == '_intersects_bbox') {
 				dbQuery[logical].whereRaw(helpers.st.intersects_bbox(key, compareValue));
 			}
@@ -599,6 +646,10 @@ export function applyAggregate(dbQuery: Knex.QueryBuilder, aggregate: Aggregate,
 
 			if (operation === 'avgDistinct') {
 				dbQuery.avgDistinct(`${collection}.${field}`, { as: `avgDistinct->${field}` });
+			}
+
+			if (operation === 'countAll') {
+				dbQuery.count('*', { as: 'countAll' });
 			}
 
 			if (operation === 'count') {
