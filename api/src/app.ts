@@ -3,6 +3,7 @@ import express, { Request, Response, RequestHandler } from 'express';
 import fse from 'fs-extra';
 import path from 'path';
 import qs from 'qs';
+import { ServerResponse } from 'http';
 import helmet from 'helmet';
 
 import activityRouter from './controllers/activity';
@@ -136,6 +137,15 @@ export default async function createApp(): Promise<express.Application> {
 
 	app.use(expressLogger);
 
+	app.use((_req, res, next) => {
+		res.setHeader('X-Powered-By', 'Directus');
+		next();
+	});
+
+	if (env.CORS_ENABLED === true) {
+		app.use(cors);
+	}
+
 	app.use((req, res, next) => {
 		(
 			express.json({
@@ -154,15 +164,6 @@ export default async function createApp(): Promise<express.Application> {
 
 	app.use(extractToken);
 
-	app.use((_req, res, next) => {
-		res.setHeader('X-Powered-By', 'Directus');
-		next();
-	});
-
-	if (env.CORS_ENABLED === true) {
-		app.use(cors);
-	}
-
 	app.get('/', (_req, res, next) => {
 		if (env.ROOT_REDIRECT) {
 			res.redirect(env.ROOT_REDIRECT);
@@ -178,27 +179,35 @@ export default async function createApp(): Promise<express.Application> {
 	});
 
 	if (env.SERVE_APP) {
-		const adminPath = require.resolve('@directus/app');
+		const adminPath = require.resolve('@directus/app', require.main ? { paths: [require.main.filename] } : undefined);
 		const adminUrl = new Url(env.PUBLIC_URL).addPath('admin');
 
 		// Set the App's base path according to the APIs public URL
 		const html = await fse.readFile(adminPath, 'utf8');
 		const htmlWithBase = html.replace(/<base \/>/, `<base href="${adminUrl.toString({ rootRelative: true })}/" />`);
 
-		const noCacheIndexHtmlHandler = (_req: Request, res: Response) => {
+		const sendHtml = (_req: Request, res: Response) => {
 			res.setHeader('Cache-Control', 'no-cache');
+			res.setHeader('Vary', 'Origin, Cache-Control');
 			res.send(htmlWithBase);
 		};
 
-		app.get('/admin', noCacheIndexHtmlHandler);
-		app.use('/admin', express.static(path.join(adminPath, '..')));
-		app.use('/admin/*', noCacheIndexHtmlHandler);
+		const setStaticHeaders = (res: ServerResponse) => {
+			res.setHeader('Cache-Control', 'max-age=31536000, immutable');
+			res.setHeader('Vary', 'Origin, Cache-Control');
+		};
+
+		app.get('/admin', sendHtml);
+		app.use('/admin', express.static(path.join(adminPath, '..'), { setHeaders: setStaticHeaders }));
+		app.use('/admin/*', sendHtml);
 	}
 
 	// use the rate limiter - all routes for now
 	if (env.RATE_LIMITER_ENABLED === true) {
 		app.use(rateLimiter);
 	}
+
+	app.get('/server/ping', (req, res) => res.send('pong'));
 
 	app.use(authenticate);
 

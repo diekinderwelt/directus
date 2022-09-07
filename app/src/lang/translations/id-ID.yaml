@@ -23,15 +23,20 @@ identifier: Pengenal
 avatar: Avatar
 application: Aplikasi
 default_provider: Bawaan
+method: Metode
 published: Dipublikasikan
 draft: Konsep
 archived: Diarsipkan
 modules: Modul
 module_bar: Papan Modul
+logs: Catatan
+reset_width: Atur Ulang Lebar
 tile_size: Ukuran Corak
 edit_field: Edit Kolom
 conditions: Kondisi
 location: Lokasi
+condition_rules: Gaya Bersyarat
+input: Input
 maps: Peta
 switch_user: Beralih/ganti pengguna
 item_creation: Pembuatan Item
@@ -41,8 +46,14 @@ duplicate_field: Kolom Duplikat
 half_width: Lebar Setengah
 full_width: Lebar Penuh
 group: Grup
+export_items: Ekspor Item
 and: Dan
 or: Atau
+init: Awal
+dataset_too_large_currently_showing_n_items: Himpunan data terlalu besar. Saat ini menampilkan {n} item pertama.
+modifier: Pengubah
+custom: Kustomisasi
+hook: Hook
 fill_width: Lebar Penuh
 field_name_translations: Terjemahan Nama Kolom
 enter_password_to_enable_tfa: Masukkan password anda untuk Two-Factor Authentication
@@ -66,8 +77,16 @@ create_preset: Buat Preset
 create_panel: Buat Panel
 create_role: Buat Peran
 create_user: Buat User
+message: Pesan
 delete_panel: Hapus Panel
 create_webhook: Buat Webhook
+create_translation_string: Buat Terjemahan
+no_translation_string: Tidak ditemukan terjemahan
+no_translation_string_copy: Belum ada terjemahan tersedia.
+translation_string_translations_placeholder: Tambahkan terjemahan baru
+edit_translation_string: Sunting Terjemahan
+delete_translation_string_copy: >-
+  Apakah Anda yakin ingin menghapus bidang terjemahan "{key}" ini? Tindakan ini tidak dapat dikembalikan.
 invite_users: Undang Pengguna Lain
 invite: Undang
 email_already_invited: Email "{email}" sudah diundang
@@ -88,6 +107,8 @@ update_bookmark: Hapus Markah
 delete_bookmark: Hapus Markah
 delete_bookmark_copy: >-
   Apakah anda yakin ingin menghapus markah "{bookmark}"? Tindakan ini tidak dapat dikembalikan.
+delete_personal_bookmark: Hapus Markah Pribadi
+delete_global_bookmark: Hapus Markah Global
 logoutReason:
   SIGN_OUT: Telah keluar
   SESSION_EXPIRED: Sesi kadaluarsa
@@ -114,6 +135,7 @@ recommended_defaults: Bawaan yang Direkomendasikan
 unarchive: Batalkan pengarsipan
 unarchive_confirm: Apakah Anda yakin ingin membatalkan arsip dari item ini?
 nested_files_folders_will_be_moved: Berkas dan folder yang disarang akan dipindahkan satu tingkat keatas.
+validation_errors_notice: 'Bidang berikut memiliki nilai-nilai yang tidak sah:'
 validationError:
   eq: Nilai harus {valid}
   neq: Nilai tidak boleh {invalid}
@@ -163,6 +185,7 @@ revision_post_create: Ini adalah bagaimana item ini terlihat ketika dibuat.
 revision_post_update: Ini adalah bagaimana item ini terlihat setelah pembaruan.
 changes_made: Dibawah adalah perubahan spesifik yang dibuat dalam revisi ini.
 no_relational_data: Ingat bahwa data yang berhubungan tidak termasuk disini.
+hide_field: Sembunyikan bidang
 hide_field_on_detail: Sembunyikan Baris pada Rincian
 show_field_on_detail: Tampilkan Baris pada Rincian
 delete_field: Hapus Baris
@@ -171,6 +194,7 @@ field_create_success: 'Buat Baris: "{field}"'
 field_update_success: 'Perbarui Baris: "{field}"'
 duplicate_where_to: Dimana Anda ingin menggandakan baris ini?
 language: Bahasa
+language_placeholder: Pilih sebuah bahasa...
 aggregate_function: Fungsi Agregat
 aggregate_precision: Presisi Agregat
 group_aggregation: Grup Agregat
@@ -181,6 +205,7 @@ camera: Kamera
 show_zero: Tampilkan Kosong
 create_in_advanced_field_creation_mode: Buat Bidang dalam Mode Lanjutan
 continue_in_advanced_field_creation_mode: Lanjutkan di Mode Pembuatan Bidang Lanjutan
+validation: Validasi
 sum: Jumlah
 sum_distinct: Perbedaan Jumlah
 avg: Rata-rata
@@ -268,6 +293,8 @@ next: Lanjut
 field_name: Nama Kolom
 translations: Terjemahan
 no_translations: Tidak ada terjemahan
+left_to_right: Kiri ke Kanan
+right_to_left: Kanan ke Kiri
 note: Catatan
 enter_a_value: Masukkan sebuah nilai...
 enter_a_placeholder: Masukkan sebuah placeholder...
@@ -311,12 +338,14 @@ revision_delta_deleted: Terhapus
 revision_delta_reverted: Dikembalikan
 revision_delta_other: Revisi
 revision_delta_by: '{date} oleh {user}'
+download_page_as_csv: 'Unduh Halaman sebagai CSV'
 private_user: Pengguna Pribadi
 creation_preview: Pratinjau Kreasi
 revision_preview: Pratinjau Revisi
 updates_made: Pembaruan Dibuat
 leave_comment: Tinggalkan komentar...
 post_comment_success: Komentar telah diposting
+post_comment_updated: Komentar diperbarui
 item_create_success: Item telah Dibuat | Item telah Dibuat
 item_update_success: Item telah Diperbarui | Item telah Diperbarui
 item_delete_success: Item telah Dihapus | Item telah Dihapus
@@ -351,10 +380,18 @@ delete_comment: Hapus Komentar
 functions:
   year: Tahun
   month: Bulan
+  week: Pekan
+  day: Hari
+  weekday: Hari Kerja
+  hour: Jam
+  minute: Menit
+  second: Detik
   count: Hitung
 date-fns_date: PPP
 date-fns_time: 'h:mm:ss a'
 date-fns_time_no_seconds: 'h:mm a'
+date-fns_time_24hour: 'HH:mm:ss'
+date-fns_time_no_seconds_24hour: 'HH:mm'
 date-fns_date_short: 'MMM d, u'
 date-fns_time_short: 'h:mma'
 date-fns_date_short_no_year: MMM d
@@ -405,6 +442,9 @@ replace_from_library: Menggantikan Berkas dari Pustaka
 replace_from_url: Menggantikan Berkas dari URL
 no_file_selected: Tidak Ada Berkas Yang Dipilih
 download_file: Unduh Berkas
+open_file_in_tab: Buka file di tab baru
+start_export: Mulai Ekspor
+not_available_for_local_downloads: Tidak tersedia untuk unduhan lokal
 collection_key: Kunci Koleksi
 name: Nama
 primary_key_field: Kolom Primary Key
@@ -425,6 +465,7 @@ creating_items: Membuat Item
 enable_create_button: Aktifkan Tombol Buat Baru
 selecting_items: Memilih item
 enable_select_button: Aktifkan Tombol Pemilihan
+allow_duplicates: Izinkan Duplikasi
 comments: Komentar
 no_comments: Belum Ada Komentar
 click_to_expand: Tekan Untuk Memperluas
@@ -475,6 +516,7 @@ activity_item: Item Aktifitas
 action: Aksi
 ip_address: Alamat IP
 user_agent: Agen pengguna
+origin: Asal
 webhooks: Webhooks
 decimals: Desimal
 value_decimals: Nilai Desimal
@@ -522,6 +564,9 @@ errors:
   INVALID_OTP: Kata sandi satu-kali salah
   INVALID_PAYLOAD: Payload tidak valid
   INVALID_QUERY: Kueri tidak valid
+  INVALID_TOKEN: Token tidak valid
+  INVALID_IP: Alamat IP tidak diperbolehkan
+  INVALID_USER: Gagal untuk mengautentikasi pengguna
   ITEM_LIMIT_REACHED: Batas item tercapai
   ITEM_NOT_FOUND: Item tidak ditemukan
   ROUTE_NOT_FOUND: Tidak ditemukan
@@ -536,11 +581,20 @@ errors:
   VALUE_OUT_OF_RANGE: Nilai di luar rentang
   INVALID_FOREIGN_KEY: Foreign key tidak valid
   UNKNOWN: Kesalahan Tidak Terduga
+  SERVICE_UNAVAILABLE: Layanan Tidak Tersedia
+  UNSUPPORTED_MEDIA_TYPE: Jenis media tidak didukung
+  UNEXPECTED_RESPONSE: Respon tidak terduga
+  TOKEN_EXPIRED: Token kedaluwarsa
+  RANGE_NOT_SATISFIABLE: Rentang tidak valid
+  METHOD_NOT_ALLOWED: Metode Tidak Diizinkan
+  REQUESTS_EXCEEDED: Batas permintaan telah tercapai
 security: Keamanan
 value_hashed: Nilai telah Di-hash secara Aman
 bookmark_name: Nama bookmark...
 create_bookmark: Buat Bookmark
 edit_bookmark: Sunting Bookmark
+edit_personal_bookmark: Sunting Markah Pribadi
+edit_global_bookmark: Sunting Markah Global
 bookmarks: Markah
 presets: Preset
 unexpected_error: Kesalahan Tidak Terduga
@@ -548,9 +602,11 @@ unexpected_error_copy: Terjadi galat yang tidak terduga, Silahkan mencoba lagi n
 copy_details: Salin Rincian
 no_app_access: Tidak Ada Akses Aplikasi
 no_app_access_copy: Pengguna ini tidak diperbolehkan untuk menggunakan aplikasi admin.
+password_reset_sent: Jika Anda memiliki akun, kami telah mengirimkan tautan yang aman untuk mengatur ulang kata sandi Anda
 password_reset_successful: Sandi berhasil diatur ulang
 back: Kembali
 filter: Penyaring
+edit_image: Sunting Gambar
 editing_image: Menyunting Gambar
 square: Persegi
 free: Bebas
@@ -566,10 +622,14 @@ make_collection_visible: Buat Koleksi Terlihat
 make_collection_hidden: Buat Koleksi Tersembunyi
 make_folder_visible: Buat Folder Terlihat
 make_folder_hidden: Buat Folder Tersembunyi
+goto_collection_content: Tampilkan konten
 start_end_of_count_items: '{start}-{end} dari {count} item'
 start_end_of_count_filtered_items: '{start}-{end} dari {count} item yang di filter'
 one_item: '1 item'
 one_filtered_item: '1 item yang di filter'
+delete_collection_are_you_sure: >-
+  Apakah anda yakin ingin menghapus koleksi "{collection}"? Hal ini akan menghapus koleksi dan semua item di dalamnya. Aksi ini bersifat permanen.
+delete_folder_are_you_sure: Anda yakin ingin menghapus folder "{folder}"? Susunan folder dan koleksi akan dipindahkan ke level paling atas.
 collections_shown: Koleksi yang ditampilkan
 visible_collections: Koleksi yang terlihat
 hidden_collections: Koleksi yang tersembunyi
@@ -596,6 +656,7 @@ advanced_settings: Pengaturan Lanjutan
 advanced_filter: Filter Lanjutan
 delete_advanced_filter: Hapus Filter
 change_advanced_filter_operator: Ganti Operator
+advanced: Tingkat lanjut
 operators:
   eq: Sama dengan
   neq: Tidak sama dengan
@@ -663,6 +724,7 @@ no_results_copy: Sesuaikan atau bersihkan filter pencarian untuk melihat hasil.
 clear_filters: Bersihkan Filter
 saves_automatically: Menyimpan Secara Otomatis
 role: Peran
+edit_role: Sunting Peran
 rule: Aturan
 user: Pengguna
 no_presets: Tidak ada preset
@@ -685,9 +747,21 @@ toggle: Beralih
 icon_on: Ikon Aktif
 icon_off: Ikon Tidak Aktif
 label: Label
+updating_flow: Memperbarui Alur
+flow_setup: Penyiapan Alur
 flow_name: Nama
+flow_tracking: Pelacakan Log & Aktifitas
+flow_tracking_all: Lacak Log & Aktifitas
 flow_tracking_activity: Hanya Aktifitas Melacak
 flow_tracking_null: Jangan Lacak Apapun
+start_flow: Mulai Alur
+stop_flow: Hentikan Alur
+create_operation: Buat Operasi
+edit_operation: Sunting Operasi
+code: Kode
+operation_options: Opsi Operasi
+operation_name: Nama dari operasi...
+operation_key: Pengenal untuk referensi...
 insights: Wawasan
 dashboard: Dasbor
 panel: Panel
@@ -709,8 +783,14 @@ create_dashboard: Buat Dasbor
 dashboard_name: Nama Dasbor
 no_data: Tidak ada Data
 accountability: Akuntabilitas
+payload: Muatan
+details: Rincian
 full_screen: Layar Penuh
+full_text_search: Pencarian teks lengkap
 edit_panels: Sunting Panel
+center_align: Rata Tengah
+left_align: Rata Kiri
+right_align: Rata kanan
 fit_to_screen: Sesuaikan dengan Layar
 image_url: Tautan Gambar
 alt_text: Teks Alternatif
@@ -848,6 +928,7 @@ fields:
     collection: Koleksi
     comment: Komentar
     user_agent: Agen pengguna
+    origin: Asal
     ip: Alamat IP
     revisions: Revisi
   directus_collections:
@@ -1118,6 +1199,7 @@ value: Nilai
 view_project: Lihat Proyek
 report_error: Lapor Kesalahan
 start: Mulai
+table: Tabel
 interfaces:
   filter:
     name: Penyaring
@@ -1184,6 +1266,8 @@ interfaces:
     description: Masukan atau pilih nilai warna
   datetime:
     datetime: Datetime
+  system-fields:
+    select_a_collection: Pilih Koleksi
   system-display-template:
     display-template: Tampilan Template
     collection_field_not_setup: Opsi bidang koleksi disalahkonfigurasikan
@@ -1219,6 +1303,8 @@ interfaces:
     zoom: Perbesar
   system-folder:
     folder: Direktori
+  list:
+    sort: Sortir
   tags:
     tags: Tagar
   boolean:
@@ -1246,6 +1332,7 @@ displays:
   datetime:
     datetime: Datetime
     format: Format
+    suffix: Akhiran
   file:
     file: Berkas
   filesize:
@@ -1289,7 +1376,14 @@ panels:
   label:
     name: Label
 operations:
+  item-create:
+    payload: Muatan
+  item-update:
+    payload: Muatan
+  log:
+    message: Pesan
   notification:
     recipient: Pengguna
+    message: Pesan
   request:
     url: URL

@@ -12,26 +12,26 @@
 				height: workspaceSize.height + 'px',
 			}"
 		>
-			<template v-if="!$slots.panel">
+			<template v-if="!$slots.tile">
 				<v-workspace-tile
-					v-for="panel in panels"
-					:key="panel.id"
-					v-bind="panel"
+					v-for="tile in tiles"
+					:key="tile.id"
+					v-bind="tile"
 					:edit-mode="editMode"
 					:resizable="resizable"
-					@preview="$emit('preview', panel)"
-					@edit="$emit('edit', panel)"
-					@update="$emit('update', { edits: $event, id: panel.id })"
-					@move="$emit('move', panel.id)"
-					@delete="$emit('delete', panel.id)"
-					@duplicate="$emit('duplicate', panel)"
+					@preview="$emit('preview', tile)"
+					@edit="$emit('edit', tile)"
+					@update="$emit('update', { edits: $event, id: tile.id })"
+					@move="$emit('move', tile.id)"
+					@delete="$emit('delete', tile.id)"
+					@duplicate="$emit('duplicate', tile)"
 				>
-					<slot :panel="panel"></slot>
+					<slot :tile="tile"></slot>
 				</v-workspace-tile>
 			</template>
 			<template v-else>
-				<template v-for="panel in panels" :key="panel.id">
-					<slot name="panel" :panel="panel"></slot>
+				<template v-for="tile in tiles" :key="tile.id">
+					<slot name="tile" :tile="tile"></slot>
 				</template>
 			</template>
 		</div>
@@ -40,23 +40,26 @@
 
 <script setup lang="ts">
 import { computed, inject, ref } from 'vue';
-import { useElementSize } from '@/composables/use-element-size';
+import { useElementSize } from '@directus/shared/composables';
 import { AppTile } from './v-workspace-tile.vue';
 import { cssVar } from '@directus/shared/utils/browser';
 
-const props = withDefaults(
-	defineProps<{
-		panels: AppTile[];
-		editMode?: boolean;
-		zoomToFit?: boolean;
-		resizable?: boolean;
-	}>(),
-	{
-		editMode: false,
-		zoomToFit: false,
-		resizable: true,
-	}
-);
+interface Props {
+	/** What tiles to render inside the workspace */
+	tiles: AppTile[];
+	/** Enables the edit mode */
+	editMode?: boolean;
+	/** Sets zoom and position so that all components are perfectly shown */
+	zoomToFit?: boolean;
+	/** Makes the panel resizable */
+	resizable?: boolean;
+}
+
+const props = withDefaults(defineProps<Props>(), {
+	editMode: false,
+	zoomToFit: false,
+	resizable: true,
+});
 
 defineEmits(['update', 'move', 'delete', 'duplicate', 'edit', 'preview']);
 
@@ -66,11 +69,11 @@ const mainElementSize = useElementSize(mainElement);
 const paddingSize = computed(() => Number(cssVar('--content-padding', mainElement.value)?.slice(0, -2) || 0));
 
 const workspaceSize = computed(() => {
-	const furthestPanelX = props.panels.reduce(
-		(aggr, panel) => {
-			if (panel.x! > aggr.x!) {
-				aggr.x = panel.x!;
-				aggr.width = panel.width!;
+	const furthestTileX = props.tiles.reduce(
+		(aggr, tile) => {
+			if (tile.x! > aggr.x!) {
+				aggr.x = tile.x!;
+				aggr.width = tile.width!;
 			}
 
 			return aggr;
@@ -78,11 +81,11 @@ const workspaceSize = computed(() => {
 		{ x: 0, width: 0 }
 	);
 
-	const furthestPanelY = props.panels.reduce(
-		(aggr, panel) => {
-			if (panel.y! > aggr.y!) {
-				aggr.y = panel.y!;
-				aggr.height = panel.height!;
+	const furthestPanelY = props.tiles.reduce(
+		(aggr, tile) => {
+			if (tile.y! > aggr.y!) {
+				aggr.y = tile.y!;
+				aggr.height = tile.height!;
 			}
 
 			return aggr;
@@ -92,13 +95,13 @@ const workspaceSize = computed(() => {
 
 	if (props.editMode === true) {
 		return {
-			width: (furthestPanelX.x! + furthestPanelX.width! + 25) * 20,
+			width: (furthestTileX.x! + furthestTileX.width! + 25) * 20,
 			height: (furthestPanelY.y! + furthestPanelY.height! + 25) * 20,
 		};
 	}
 
 	return {
-		width: (furthestPanelX.x! + furthestPanelX.width! - 1) * 20,
+		width: (furthestTileX.x! + furthestTileX.width! - 1) * 20,
 		height: (furthestPanelY.y! + furthestPanelY.height! - 1) * 20,
 	};
 });

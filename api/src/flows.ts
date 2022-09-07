@@ -1,14 +1,18 @@
 import * as sharedExceptions from '@directus/shared/exceptions';
 import {
+	Accountability,
+	Action,
 	ActionHandler,
 	FilterHandler,
 	Flow,
 	Operation,
 	OperationHandler,
 	SchemaOverview,
-	Accountability,
-	Action,
 } from '@directus/shared/types';
+import { applyOptionsData, toArray } from '@directus/shared/utils';
+import fastRedact from 'fast-redact';
+import { Knex } from 'knex';
+import { omit } from 'lodash';
 import { get } from 'micromustache';
 import { schedule, validate } from 'node-cron';
 import getDatabase from './database';
@@ -16,18 +20,14 @@ import emitter from './emitter';
 import env from './env';
 import * as exceptions from './exceptions';
 import logger from './logger';
+import { getMessenger } from './messenger';
 import * as services from './services';
 import { FlowsService } from './services';
+import { ActivityService } from './services/activity';
+import { RevisionsService } from './services/revisions';
 import { EventHandler } from './types';
 import { constructFlowTree } from './utils/construct-flow-tree';
 import { getSchema } from './utils/get-schema';
-import { ActivityService } from './services/activity';
-import { RevisionsService } from './services/revisions';
-import { Knex } from 'knex';
-import { omit } from 'lodash';
-import { getMessenger } from './messenger';
-import fastRedact from 'fast-redact';
-import { applyOperationOptions } from './utils/operation-options';
 import { JobQueue } from './utils/job-queue';
 
 let flowManager: FlowManager | undefined;
@@ -135,31 +135,33 @@ class FlowManager {
 		const flows = await flowsService.readByQuery({
 			filter: { status: { _eq: 'active' } },
 			fields: ['*', 'operations.*'],
+			limit: -1,
 		});
 
 		const flowTrees = flows.map((flow) => constructFlowTree(flow));
 
 		for (const flow of flowTrees) {
 			if (flow.trigger === 'event') {
-				const events: string[] =
-					flow.options?.scope
-						?.map((scope: string) => {
-							if (['items.create', 'items.update', 'items.delete'].includes(scope)) {
-								return (
-									flow.options?.collections?.map((collection: string) => {
-										if (collection.startsWith('directus_')) {
-											const action = scope.split('.')[1];
-											return collection.substring(9) + '.' + action;
-										}
+				const events: string[] = flow.options?.scope
+					? toArray(flow.options.scope)
+							.map((scope: string) => {
+								if (['items.create', 'items.update', 'items.delete'].includes(scope)) {
+									return (
+										flow.options?.collections?.map((collection: string) => {
+											if (collection.startsWith('directus_')) {
+												const action = scope.split('.')[1];
+												return collection.substring(9) + '.' + action;
+											}
 
-										return `${collection}.${scope}`;
-									}) ?? []
-								);
-							}
+											return `${collection}.${scope}`;
+										}) ?? []
+									);
+								}
 
-							return scope;
-						})
-						?.flat() ?? [];
+								return scope;
+							})
+							.flat()
+					: [];
 
 				if (flow.options.type === 'filter') {
 					const handler: FilterHandler = (payload, meta, context) =>
@@ -182,7 +184,7 @@ class FlowManager {
 					const handler: ActionHandler = (meta, context) =>
 						this.executeFlow(flow, meta, {
 							accountability: context.accountability,
-							database: context.database,
+							database: getDatabase(),
 							getSchema: context.schema ? () => context.schema : getSchema,
 						});
 
@@ -297,6 +299,7 @@ class FlowManager {
 		};
 
 		let nextOperation = flow.operation;
+		let lastOperationStatus: 'resolve' | 'reject' | 'unknown' = 'unknown';
 
 		const steps: {
 			operation: string;
@@ -310,6 +313,7 @@ class FlowManager {
 
 			keyedData[nextOperation.key] = data;
 			keyedData[LAST_KEY] = data;
+			lastOperationStatus = status;
 			steps.push({ operation: nextOperation!.id, key: nextOperation.key, status, options });
 
 			nextOperation = successor;
@@ -329,6 +333,7 @@ class FlowManager {
 				collection: 'directus_flows',
 				ip: accountability?.ip ?? null,
 				user_agent: accountability?.userAgent ?? null,
+				origin: accountability?.origin ?? null,
 				item: flow.id,
 			});
 
@@ -348,6 +353,10 @@ class FlowManager {
 					},
 				});
 			}
+		}
+
+		if (flow.trigger === 'event' && flow.options.type === 'filter' && lastOperationStatus === 'reject') {
+			throw keyedData[LAST_KEY];
 		}
 
 		if (flow.options.return === '$all') {
@@ -376,7 +385,7 @@ class FlowManager {
 
 		const handler = this.operations[operation.type];
 
-		const options = applyOperationOptions(operation.options, keyedData);
+		const options = applyOptionsData(operation.options, keyedData);
 
 		try {
 			const result = await handler(options, {

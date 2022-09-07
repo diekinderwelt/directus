@@ -568,6 +568,7 @@ trigger: Sprožilec
 flow_name: Ime
 flow_tracking_activity: Sledi samo aktivnosti
 flow_tracking_null: Ne sledi ničesar
+code: Koda
 accountability: Odgovornost
 full_screen: Celozaslonski način
 image_url: URL naslov slike
@@ -1004,6 +1005,7 @@ value: Vrednost
 view_project: Poglej projekt
 report_error: Sporoči napako
 start: Začetek
+table: Tabela
 interfaces:
   filter:
     add_filter: Dodaj filter
@@ -1066,6 +1068,8 @@ interfaces:
     include_seconds: Vključi sekunde
     set_to_now: Nastavi na trenutni čas
     use_24: Uporabi 24-urno obliko
+  system-fields:
+    select_a_collection: Izberite zbirko
   system-display-template:
     display-template: Prikaži predlogo
     description: Mešano statični tekst in dinamične vrednosti polja
@@ -1165,6 +1169,7 @@ interfaces:
     description: Ustvarite več zapisov enake strukture
     edit_fields: Uredi polja
     add_label: 'Oznaka za "Ustvari novo"'
+    sort: Razvrsti
     field_name_placeholder: Vnesite ime polja ...
     field_note_placeholder: Vnesite opis polja ...
   slider:
@@ -1280,6 +1285,7 @@ displays:
     short: Kratko
     relative: Relativno
     relative_label: 'Pokaži relativni čas, recimo pred 5 minutami'
+    suffix: Pripona
   file:
     file: Datoteka
     description: Prikaži datoteke

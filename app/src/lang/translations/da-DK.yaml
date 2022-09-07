@@ -176,6 +176,7 @@ revision_post_create: Her er hvordan dette element så ud, da det blev oprettet.
 revision_post_update: Her er hvad dette element så ud efter opdateringen.
 changes_made: Nedenfor er de specifikke ændringer i denne revision.
 no_relational_data: Husk på, at relationsdata ikke er inkluderet her.
+bottom: Bund
 hide_field: Skjul Felt
 hide_field_on_detail: Skjul felt på detalje
 show_field_on_detail: Vis felt på detalje
@@ -729,6 +730,7 @@ trigger: Udløser
 flow_name: Navn
 flow_tracking_activity: Spor Kun Aktivitet
 flow_tracking_null: Spor Ikke Noget
+code: Kode
 insights: Indsigter
 dashboard: Instrumentbræt
 panel: Stykke
@@ -1289,6 +1291,8 @@ value: Værdi
 view_project: Vis Projekt
 report_error: Fejl I Rapport
 start: Start
+table: Tabel
+list: Liste
 interfaces:
   filter:
     name: Filtrer
@@ -1367,6 +1371,8 @@ interfaces:
     set_to_now: Indstil til nu
     use_24: Brug 24-timers Format
     placeholder: Vælg en datetime...
+  system-fields:
+    select_a_collection: Vælg en samling
   system-display-template:
     display-template: Vis Skabelon
     description: Bland statisk tekst og dynamiske feltværdier
@@ -1476,6 +1482,7 @@ interfaces:
     description: Opret flere indgange af samme struktur
     edit_fields: Rediger Felter
     add_label: '"Opret Ny" Etiket'
+    sort: Sortér
     field_name_placeholder: Indtast feltnavn...
     field_note_placeholder: Indtast felt note...
     incompatible_data: De aktuelle data er ikke kompatible med repeater-grænsefladen og vil blive tilsidesat, når du tilføjer elementer til repeateren
@@ -1528,6 +1535,9 @@ interfaces:
     display_template: Vis Skabelon
     no_collection: Ingen Samling
     toggle_split_view: Slå Opdelt Visning Til/Fra
+    enable: Aktiver
+    user_language: Brug Nuværende Brugersprog
+    default_language: Standard Sprog
     language_field: Sprog Indikator Felt
   list-o2m-tree-view:
     description: Trævisning for indlejrede rekursive en-til-mange elementer
@@ -1603,6 +1613,7 @@ displays:
     short: Kort
     relative: Relativ
     relative_label: 'Vis relativ tid, fx: 5 minutter siden'
+    suffix: Suffiks
   file:
     file: Fil
     description: Vis filer
@@ -1791,7 +1802,6 @@ panels:
   meter:
     description: Måler til sporingsværdier
     name: Måler
-    arc: Bue
     stroke_width: Slag Bredde
     select_max_value: Du skal vælge en maksimal værdi.
     max_greater_than_zero: Maksimum skal være større end 0.

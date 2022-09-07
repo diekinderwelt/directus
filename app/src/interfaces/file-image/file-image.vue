@@ -15,7 +15,7 @@
 				</span>
 			</div>
 
-			<img
+			<v-image
 				v-else-if="image.type.startsWith('image')"
 				:src="src"
 				:width="image.width"
@@ -36,10 +36,13 @@
 					<v-icon name="zoom_in" />
 				</v-button>
 				<v-button v-tooltip="t('download')" icon rounded :href="downloadSrc" :download="image.filename_download">
-					<v-icon name="get_app" />
+					<v-icon name="file_download" />
 				</v-button>
-				<v-button v-tooltip="t('edit')" icon rounded @click="editDrawerActive = true">
+				<v-button v-tooltip="t('edit')" icon rounded @click="editImageDetails = true">
 					<v-icon name="open_in_new" />
+				</v-button>
+				<v-button v-tooltip="t('edit_image')" icon rounded @click="editImageEditor = true">
+					<v-icon name="tune" />
 				</v-button>
 				<v-button v-tooltip="t('deselect')" icon rounded @click="deselect">
 					<v-icon name="close" />
@@ -53,12 +56,14 @@
 
 			<drawer-item
 				v-if="!disabled && image"
-				v-model:active="editDrawerActive"
+				v-model:active="editImageDetails"
 				collection="directus_files"
 				:primary-key="image.id"
 				:edits="edits"
 				@input="update"
 			/>
+
+			<image-editor v-if="!disabled && image" :id="image.id" v-model="editImageEditor" @refresh="refresh" />
 
 			<file-lightbox :id="image.id" v-model="lightboxActive" />
 		</div>
@@ -67,16 +72,17 @@
 </template>
 
 <script setup lang="ts">
-import { useI18n } from 'vue-i18n';
-import { ref, computed, toRefs } from 'vue';
 import api, { addTokenToURL } from '@/api';
-import formatFilesize from '@/utils/format-filesize';
+import { useRelationM2O } from '@/composables/use-relation-m2o';
+import { RelationQuerySingle, useRelationSingle } from '@/composables/use-relation-single';
+import { formatFilesize } from '@/utils/format-filesize';
 import { getRootPath } from '@/utils/get-root-path';
-import DrawerItem from '@/views/private/components/drawer-item';
-import { RelationQuerySingle, useRelationM2O, useRelationSingle } from '@/composables/use-relation';
-import FileLightbox from '@/views/private/components/file-lightbox';
-import { nanoid } from 'nanoid';
 import { readableMimeType } from '@/utils/readable-mime-type';
+import DrawerItem from '@/views/private/components/drawer-item.vue';
+import FileLightbox from '@/views/private/components/file-lightbox.vue';
+import ImageEditor from '@/views/private/components/image-editor.vue';
+import { computed, ref, toRefs } from 'vue';
+import { useI18n } from 'vue-i18n';
 
 const props = withDefaults(
 	defineProps<{
@@ -106,12 +112,12 @@ const value = computed({
 });
 
 const query = ref<RelationQuerySingle>({
-	fields: ['id', 'title', 'width', 'height', 'filesize', 'type', 'filename_download'],
+	fields: ['id', 'title', 'width', 'height', 'filesize', 'type', 'filename_download', 'modified_on'],
 });
 
 const { collection, field } = toRefs(props);
 const { relationInfo } = useRelationM2O(collection, field);
-const { displayItem: image, loading, update, remove } = useRelationSingle(value, query, relationInfo);
+const { displayItem: image, loading, update, remove, refresh } = useRelationSingle(value, query, relationInfo);
 
 const { t, n, te } = useI18n();
 
@@ -119,17 +125,15 @@ const lightboxActive = ref(false);
 const editDrawerActive = ref(false);
 const imageError = ref<string | null>(null);
 
-const cacheBuster = ref(nanoid());
-
 const src = computed(() => {
 	if (!image.value) return null;
 
 	if (image.value.type.includes('svg')) {
-		return addTokenToURL(getRootPath() + `assets/${image.value.id}`);
+		return '/assets/' + image.value.id;
 	}
 	if (image.value.type.includes('image')) {
 		const fit = props.crop ? 'cover' : 'contain';
-		const url = getRootPath() + `assets/${image.value.id}?key=system-large-${fit}&cache-buster=${cacheBuster.value}`;
+		const url = `/assets/${image.value.id}?key=system-large-${fit}&cache-buster=${image.value.modified_on}`;
 		return addTokenToURL(url);
 	}
 
@@ -140,7 +144,7 @@ const ext = computed(() => (image.value ? readableMimeType(image.value.type, tru
 
 const downloadSrc = computed(() => {
 	if (!image.value) return null;
-	return addTokenToURL(getRootPath() + `assets/${image.value.id}`);
+	return addTokenToURL(getRootPath() + 'assets/' + image.value.id);
 });
 
 const meta = computed(() => {
@@ -153,6 +157,9 @@ const meta = computed(() => {
 
 	return `${formatFilesize(filesize)} • ${type}`;
 });
+
+const editImageDetails = ref(false);
+const editImageEditor = ref(false);
 
 async function imageErrorHandler() {
 	if (!src.value) return;
@@ -173,6 +180,8 @@ function deselect() {
 	loading.value = false;
 	lightboxActive.value = false;
 	editDrawerActive.value = false;
+	editImageDetails.value = false;
+	editImageEditor.value = false;
 }
 
 const edits = computed(() => {

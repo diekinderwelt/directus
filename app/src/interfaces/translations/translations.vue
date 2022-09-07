@@ -1,7 +1,7 @@
 <template>
 	<div class="translations" :class="{ split: splitViewEnabled }">
 		<div class="primary" :class="splitViewEnabled ? 'half' : 'full'">
-			<language-select v-model="firstLang" :items="languageOptions">
+			<language-select v-if="showLanguageSelect" v-model="firstLang" :items="languageOptions">
 				<template #append>
 					<v-icon
 						v-if="splitViewAvailable && !splitViewEnabled"
@@ -13,6 +13,7 @@
 				</template>
 			</language-select>
 			<v-form
+				v-if="languageOptions.find((lang) => lang.value === firstLang)"
 				:primary-key="
 					relationInfo?.junctionPrimaryKeyField.field
 						? firstItemInitial?.[relationInfo?.junctionPrimaryKeyField.field]
@@ -24,6 +25,7 @@
 				:model-value="firstItem"
 				:initial-values="firstItemInitial"
 				:badge="languageOptions.find((lang) => lang.value === firstLang)?.text"
+				:direction="languageOptions.find((lang) => lang.value === firstLang)?.direction"
 				:autofocus="autofocus"
 				@update:model-value="updateValue($event, firstLang)"
 			/>
@@ -41,6 +43,7 @@
 				</template>
 			</language-select>
 			<v-form
+				v-if="languageOptions.find((lang) => lang.value === secondLang)"
 				:primary-key="
 					relationInfo?.junctionPrimaryKeyField.field
 						? secondItemInitial?.[relationInfo?.junctionPrimaryKeyField.field]
@@ -51,6 +54,7 @@
 				:initial-values="secondItemInitial"
 				:fields="fields"
 				:badge="languageOptions.find((lang) => lang.value === secondLang)?.text"
+				:direction="languageOptions.find((lang) => lang.value === secondLang)?.direction"
 				:model-value="secondItem"
 				@update:model-value="updateValue($event, secondLang)"
 			/>
@@ -61,15 +65,16 @@
 
 <script setup lang="ts">
 import api from '@/api';
-import { DisplayItem, RelationQueryMultiple, useRelationM2M, useRelationMultiple } from '@/composables/use-relation';
+import { DisplayItem, RelationQueryMultiple, useRelationMultiple } from '@/composables/use-relation-multiple';
+import { useRelationM2M } from '@/composables/use-relation-m2m';
 import { useWindowSize } from '@/composables/use-window-size';
-import { useFieldsStore, useUserStore } from '@/stores/';
-import { notEmpty } from '@/utils/is-empty';
+import { useFieldsStore } from '@/stores/fields';
 import { unexpectedError } from '@/utils/unexpected-error';
 import { toArray } from '@directus/shared/utils';
 import { computed, ref, toRefs, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import LanguageSelect from './language-select.vue';
+import { isNil } from 'lodash';
 
 const props = withDefaults(
 	defineProps<{
@@ -77,15 +82,21 @@ const props = withDefaults(
 		field: string;
 		primaryKey: string | number;
 		languageField?: string | null;
+		languageDirectionField?: string | null;
+		defaultLanguage?: string | null;
+		userLanguage?: boolean;
 		value: (number | string | Record<string, any>)[] | Record<string, any>;
 		autofocus?: boolean;
 		disabled?: boolean;
 	}>(),
 	{
 		languageField: () => null,
+		languageDirectionField: () => 'direction',
 		value: () => [],
 		autofocus: false,
 		disabled: false,
+		defaultLanguage: () => null,
+		userLanguage: false,
 	}
 );
 
@@ -98,12 +109,11 @@ const value = computed({
 	},
 });
 
-const { collection, field, primaryKey } = toRefs(props);
+const { collection, field, primaryKey, defaultLanguage, userLanguage } = toRefs(props);
 const { relationInfo } = useRelationM2M(collection, field);
-const { t } = useI18n();
+const { t, locale } = useI18n();
 
 const fieldsStore = useFieldsStore();
-const userStore = useUserStore();
 
 const { width } = useWindowSize();
 
@@ -132,15 +142,25 @@ const query = ref<RelationQueryMultiple>({
 	page: 1,
 });
 
-const { create, update, displayItems, loading, fetchedItems } = useRelationMultiple(
+const { create, update, displayItems, loading, fetchedItems, getItemEdits } = useRelationMultiple(
 	value,
 	query,
 	relationInfo,
 	primaryKey
 );
 
-const firstItem = computed(() => getItemWithLang(displayItems.value, firstLang.value));
-const secondItem = computed(() => getItemWithLang(displayItems.value, secondLang.value));
+const firstItem = computed(() => {
+	const item = getItemWithLang(displayItems.value, firstLang.value);
+	if (item === undefined) return undefined;
+
+	return getItemEdits(item);
+});
+const secondItem = computed(() => {
+	const item = getItemWithLang(displayItems.value, secondLang.value);
+	if (item === undefined) return undefined;
+
+	return getItemEdits(item);
+});
 const firstItemInitial = computed(() => getItemWithLang(fetchedItems.value, firstLang.value));
 const secondItemInitial = computed(() => getItemWithLang(fetchedItems.value, secondLang.value));
 
@@ -159,11 +179,23 @@ function updateValue(item: DisplayItem, lang: string | undefined) {
 	const itemInfo = getItemWithLang(displayItems.value, lang);
 
 	if (itemInfo) {
-		update({
+		const itemUpdates = {
 			...item,
+			[info.junctionField.field]: {
+				[info.relatedPrimaryKeyField.field]: lang,
+			},
 			$type: itemInfo?.$type,
 			$index: itemInfo?.$index,
-		});
+			$edits: itemInfo?.$edits,
+		};
+
+		if (itemInfo[info.junctionPrimaryKeyField.field] !== undefined) {
+			itemUpdates[info.junctionPrimaryKeyField.field] = itemInfo[info.junctionPrimaryKeyField.field];
+		} else {
+			itemUpdates[info.reverseJunctionField.field] = primaryKey.value;
+		}
+
+		update(itemUpdates);
 	} else {
 		create({
 			...item,
@@ -180,6 +212,10 @@ const splitViewAvailable = computed(() => {
 
 const splitViewEnabled = computed(() => {
 	return splitViewAvailable.value && splitView.value;
+});
+
+const showLanguageSelect = computed(() => {
+	return languageOptions.value.length > 1;
 });
 
 function useLanguages() {
@@ -208,10 +244,11 @@ function useLanguages() {
 
 			const edits = getItemWithLang(displayItems.value, langCode);
 
-			const filledFields = writableFields.filter((field) => notEmpty((edits ?? {})[field.field])).length;
+			const filledFields = writableFields.filter((field) => !isNil((edits ?? {})[field.field])).length;
 
 			return {
 				text: language[props.languageField ?? relationInfo.value.relatedPrimaryKeyField.field],
+				direction: props.languageDirectionField ? language[props.languageDirectionField] : undefined,
 				value: langCode,
 				edited: edits?.$type !== undefined,
 				progress: Math.round((filledFields / totalFields) * 100),
@@ -232,6 +269,10 @@ function useLanguages() {
 			fields.add(props.languageField);
 		}
 
+		if (props.languageDirectionField !== null) {
+			fields.add(props.languageDirectionField);
+		}
+
 		const pkField = relationInfo.value.relatedPrimaryKeyField.field;
 
 		fields.add(pkField);
@@ -250,14 +291,9 @@ function useLanguages() {
 			languages.value = response.data.data ? toArray(response.data.data) : [];
 
 			if (!firstLang.value) {
-				const userLang = languages.value.find(
-					(lang) =>
-						userStore.currentUser &&
-						'language' in userStore.currentUser &&
-						lang[pkField] === userStore.currentUser.language
-				)?.[pkField];
-
-				firstLang.value = userLang || languages.value[0]?.[pkField];
+				const userLocale = userLanguage.value ? locale.value : defaultLanguage.value;
+				const lang = languages.value.find((lang) => lang[pkField] === userLocale) || languages.value[0];
+				firstLang.value = lang?.[pkField];
 			}
 
 			if (!secondLang.value) {

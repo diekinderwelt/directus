@@ -23,7 +23,7 @@ export default defineOperationApp({
 		{
 			field: 'to',
 			name: '$t:operations.mail.to',
-			type: 'string',
+			type: 'csv',
 			meta: {
 				width: 'full',
 				interface: 'tags',
@@ -48,7 +48,7 @@ export default defineOperationApp({
 		{
 			field: 'body',
 			name: '$t:operations.mail.body',
-			type: 'string',
+			type: 'text',
 			meta: {
 				width: 'full',
 				interface: 'input-rich-text-md',
