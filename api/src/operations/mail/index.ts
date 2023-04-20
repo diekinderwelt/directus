@@ -1,6 +1,6 @@
-import { defineOperationApi } from '@directus/shared/utils';
-import { MailService } from '../../services';
-import { md } from '../../utils/md';
+import { defineOperationApi } from '@directus/utils';
+import { MailService } from '../../services/mail/index.js';
+import { md } from '../../utils/md.js';
 
 type Options = {
 	body: string;
@@ -17,6 +17,7 @@ export default defineOperationApi<Options>({
 		// If 'body' is of type object/undefined (happens when body consists solely of a placeholder)
 		// convert it to JSON string
 		const safeBody = typeof body !== 'string' ? JSON.stringify(body) : body;
+
 		await mailService.send({
 			html: type === 'wysiwyg' ? safeBody : md(safeBody),
 			to,

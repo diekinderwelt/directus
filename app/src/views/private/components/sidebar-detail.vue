@@ -29,7 +29,7 @@
 <script lang="ts">
 import { defineComponent, toRefs } from 'vue';
 import { useAppStore } from '@/stores/app';
-import { useGroupable } from '@directus/shared/composables';
+import { useGroupable } from '@directus/composables';
 
 export default defineComponent({
 	props: {
@@ -55,6 +55,7 @@ export default defineComponent({
 			value: props.title,
 			group: 'sidebar-detail',
 		});
+
 		const appStore = useAppStore();
 		const { sidebarOpen } = toRefs(appStore);
 		return { active, toggle, sidebarOpen };
